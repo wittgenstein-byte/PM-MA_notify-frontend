@@ -71,7 +71,12 @@ class ContractsUI {
         <td><code style="color:var(--primary-400)">${c.po_number}</code></td>
         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${c.project_name}</td>
         <td>${c.customer_name}</td>
-        <td><span class="badge badge-${c.service_type === 'MA+PM' ? 'email' : 'teams'}">${c.service_type}</span></td>
+        <td>
+          <div style="display:flex; flex-direction:column; gap:4px; align-items:start;">
+            <span class="badge badge-${c.service_type === 'MA+PM' ? 'email' : 'teams'}">${c.service_type}</span>
+            ${c.line_group_id ? `<span class="badge" style="background:#06C755; color:white; font-size:0.7rem; padding: 2px 6px; border-radius: 4px; display:inline-flex; align-items:center; gap:2px;" title="กลุ่ม LINE: ${c.line_group_name || c.line_group_id}">💬 ${c.line_group_name || 'LINE'}</span>` : ''}
+          </div>
+        </td>
         <td>${formatDate(c.start_date)}</td>
         <td>${formatDate(c.end_date)}</td>
         <td><span class="days-remaining ${c.category}">${c.daysLeft > 0 ? c.daysLeft + ' วัน' : 'หมดอายุ'}</span></td>

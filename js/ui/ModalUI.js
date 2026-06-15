@@ -80,7 +80,7 @@ class ModalUI {
       ${row('📧 Email Engineer', contract.recipients_eng || '-')}
       ${row('💬 Teams Webhook', `<span style="font-size:0.75rem;max-width:300px;word-break:break-all">${contract.teams_webhook || '-'}</span>`)}
       ${row('💚 LINE Group', contract.line_group_id
-        ? '<span class="badge badge-line">✅ เชื่อมต่อแล้ว</span>'
+        ? `<span class="badge badge-line">✅ เชื่อมต่อแล้ว</span> <span style="font-weight:600;margin-left:6px;font-size:0.85rem;" title="ID: ${contract.line_group_id}">${contract.line_group_name || contract.line_group_id}</span>`
         : '<span style="color:var(--text-muted)">— ไม่ได้ตั้งค่า</span>')}
       ${contract.note ? row('📝 หมายเหตุ', contract.note) : ''}
       ${this._buildScheduleSection(contract.contract_id)}

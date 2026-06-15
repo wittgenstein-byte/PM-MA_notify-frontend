@@ -9,7 +9,11 @@ class ContractService {
    * @param {string} gasUrl - GAS Web App URL (injected, not hardcoded)
    */
   constructor(gasUrl) {
-    this._url = gasUrl;
+    if (!gasUrl && window.location.protocol !== 'file:') {
+      this._url = '/';
+    } else {
+      this._url = gasUrl || '';
+    }
   }
 
   // ── READ ─────────────────────────────────────────────────
@@ -19,7 +23,7 @@ class ContractService {
    * @returns {Promise<{status:string, data?:Array}>}
    */
   async fetchContracts() {
-    if (!this._url) return { status: 'demo', data: [] };
+    if (this.isDemoMode()) return { status: 'demo', data: [] };
 
     const res = await fetch(`${this._url}?action=getContracts`, {
       redirect: 'follow',
@@ -32,7 +36,7 @@ class ContractService {
    * @returns {Promise<{status:string, data?:Array}>}
    */
   async fetchLogs() {
-    if (!this._url) return { status: 'demo', data: [] };
+    if (this.isDemoMode()) return { status: 'demo', data: [] };
 
     const res = await fetch(`${this._url}?action=getLogs`, {
       redirect: 'follow',
@@ -45,7 +49,7 @@ class ContractService {
    * @returns {Promise<{status:string, data?:Array}>}
    */
   async fetchRules() {
-    if (!this._url) return { status: 'demo', data: [] };
+    if (this.isDemoMode()) return { status: 'demo', data: [] };
 
     const res = await fetch(`${this._url}?action=getRules`, {
       redirect: 'follow',
@@ -61,7 +65,7 @@ class ContractService {
    * @returns {Promise<{status:'ok'|'error', contract_id?:string, message?:string}>}
    */
   async addContract(contractData) {
-    if (!this._url) {
+    if (this.isDemoMode()) {
       return { status: 'demo', message: 'No GAS URL configured' };
     }
 
@@ -84,7 +88,7 @@ class ContractService {
    * @returns {Promise<{status:string, message?:string}>}
    */
   async updateContract(contractId, data) {
-    if (!this._url) {
+    if (this.isDemoMode()) {
       return { status: 'demo', message: 'No GAS URL configured' };
     }
 
@@ -106,7 +110,7 @@ class ContractService {
    * @returns {Promise<{status:string, message?:string}>}
    */
   async deleteContract(contractId) {
-    if (!this._url) {
+    if (this.isDemoMode()) {
       return { status: 'demo', message: 'No GAS URL configured' };
     }
 
@@ -123,13 +127,13 @@ class ContractService {
   // ── PRESETS ──────────────────────────────────────────────
 
   async fetchPresets() {
-    if (!this._url) return { status: 'demo', data: [] };
+    if (this.isDemoMode()) return { status: 'demo', data: [] };
     const res = await fetch(`${this._url}?action=getPresets`, { redirect: 'follow' });
     return res.json();
   }
 
   async addPreset(presetData) {
-    if (!this._url) return { status: 'demo', message: 'No GAS URL configured' };
+    if (this.isDemoMode()) return { status: 'demo', message: 'No GAS URL configured' };
     const res = await fetch(this._url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -140,7 +144,7 @@ class ContractService {
   }
 
   async updatePreset(presetId, data) {
-    if (!this._url) return { status: 'demo', message: 'No GAS URL configured' };
+    if (this.isDemoMode()) return { status: 'demo', message: 'No GAS URL configured' };
     const res = await fetch(this._url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -151,7 +155,7 @@ class ContractService {
   }
 
   async deletePreset(presetId) {
-    if (!this._url) return { status: 'demo', message: 'No GAS URL configured' };
+    if (this.isDemoMode()) return { status: 'demo', message: 'No GAS URL configured' };
     const res = await fetch(this._url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -168,6 +172,8 @@ class ContractService {
    * @returns {boolean}
    */
   isDemoMode() {
-    return !this._url || this._url === 'YOUR_GAS_WEB_APP_URL_HERE';
+    return this._url === 'demo' || 
+           this._url === 'YOUR_GAS_WEB_APP_URL_HERE' || 
+           (!this._url && window.location.protocol === 'file:');
   }
 }
