@@ -409,6 +409,16 @@
             ผู้รับแจ้งเตือน
           </div>
 
+          <!-- LINE Group ID -->
+          <div class="form-group form-group-full" style="margin-bottom:16px">
+            <label for="lineGroupId">💚 LINE Group ID <span style="font-weight:400;color:var(--text-muted)"> (ไม่บังคับ)</span></label>
+            <input type="text" id="lineGroupId" placeholder="Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+            <span class="form-hint">Group ID จาก LINE Messaging API Webhook — ดูวิธีหาได้ในหน้าตั้งค่า</span>
+            <div class="line-group-selector" id="lineGroupSelector" style="margin-top: 10px;">
+              <!-- Populated by JS as button chips displaying group names -->
+            </div>
+          </div>
+
           <!-- Email Sale -->
           <div class="form-group" style="margin-bottom:16px">
             <label>Email Sale</label>
@@ -450,16 +460,6 @@
           <div class="form-group form-group-full" style="margin-top:16px">
             <label for="teamsWebhook">💬 Teams Webhook URL <span style="font-weight:400;color:var(--text-muted)"> (ไม่บังคับ)</span></label>
             <input type="url" id="teamsWebhook" placeholder="https://outlook.office.com/webhook/...">
-          </div>
-
-          <!-- LINE Group ID -->
-          <div class="form-group form-group-full">
-            <label for="lineGroupId">💚 LINE Group ID <span style="font-weight:400;color:var(--text-muted)"> (ไม่บังคับ)</span></label>
-            <input type="text" id="lineGroupId" placeholder="Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
-            <span class="form-hint">Group ID จาก LINE Messaging API Webhook — ดูวิธีหาได้ในหน้าตั้งค่า</span>
-            <div class="line-group-selector" id="lineGroupSelector" style="margin-top: 10px;">
-              <!-- Populated by JS as button chips displaying group names -->
-            </div>
           </div>
         </div>
 
