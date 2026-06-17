@@ -2107,3 +2107,59 @@ body {
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+/* ============================================================
+   LINE PARSER
+   ============================================================ */
+
+.line-parser-card {
+  border: 1px dashed rgba(6, 199, 85, 0.4) !important;
+  transition: all 0.25s ease;
+  background: var(--bg-secondary);
+}
+
+.line-parser-card:hover {
+  border-color: rgba(6, 199, 85, 0.8) !important;
+  box-shadow: 0 4px 20px rgba(6, 199, 85, 0.1);
+}
+
+/* ============================================================
+   LINE GROUP SELECTOR
+   ============================================================ */
+
+.group-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.group-chip:hover {
+  border-color: var(--primary-400);
+  background: rgba(59, 130, 246, 0.05);
+  color: var(--text-primary);
+}
+
+.group-chip.active {
+  background: rgba(6, 199, 85, 0.1) !important;
+  border-color: #06C755 !important;
+  color: #06C755 !important;
+  font-weight: 600;
+}
+
+
+

@@ -256,6 +256,28 @@
         </button>
       </div>
 
+      <!-- LINE Message Parser -->
+      <div class="card line-parser-card" style="margin-bottom: 20px;">
+        <div class="card-header" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;" id="lineParserHeader">
+          <h2 style="display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.1rem; color: var(--text-primary);">
+            <span style="color: #06C755;">💬</span> LINE Message Parser (นำเข้าข้อมูลจากข้อความ)
+          </h2>
+          <span id="lineParserToggleIcon" style="transition: transform 0.2s ease;">▼</span>
+        </div>
+        <div class="card-body" id="lineParserBody" style="display: none; padding: 16px; border-top: 1px solid var(--border-color); background: var(--bg-secondary);">
+          <div class="form-group" style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px;">
+            <label for="lineRawMessage" style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary);">วางข้อความคำสั่งจาก LINE (เช่น #add หรือ #contract...)</label>
+            <textarea id="lineRawMessage" rows="5" placeholder="พีโอ: PO-2026-0356&#10;โครงการ: ระบบ CCTV&#10;ลูกค้า: โรงพยาบาลขอนแก่น&#10;ประเภท: MA+PM&#10;วันหมดอายุ: 31/12/2569" style="width: 100%; font-family: monospace; font-size: 0.85rem; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); resize: vertical; box-sizing: border-box;"></textarea>
+          </div>
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="btn btn-ghost btn-sm" id="btnClearLineMessage">ล้างข้อความ</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnParseLineMessage" style="background: #06C755; border-color: #06C755; color: white;">
+              ⚡ วิเคราะห์ข้อความและกรอกฟอร์ม
+            </button>
+          </div>
+        </div>
+      </div>
+
       <form class="contract-form" id="contractForm">
         <!-- Section: Project Info -->
         <div class="form-section">
@@ -435,6 +457,9 @@
             <label for="lineGroupId">💚 LINE Group ID <span style="font-weight:400;color:var(--text-muted)"> (ไม่บังคับ)</span></label>
             <input type="text" id="lineGroupId" placeholder="Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
             <span class="form-hint">Group ID จาก LINE Messaging API Webhook — ดูวิธีหาได้ในหน้าตั้งค่า</span>
+            <div class="line-group-selector" id="lineGroupSelector" style="margin-top: 10px;">
+              <!-- Populated by JS as button chips displaying group names -->
+            </div>
           </div>
         </div>
 

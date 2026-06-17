@@ -47,12 +47,21 @@ class AddContractUI {
     this._bindCustomAlertDays();
     this._bindFormSubmit();
     this._bindActionButtons();
+    this._bindLineMessageParser();
     this._renderRecentEmails();
+    this._renderLineGroupSelector();
+
+    document.getElementById('lineGroupId')?.addEventListener('input', () => {
+      this._syncLineGroupActiveChip();
+    });
   }
 
   // ── Public ────────────────────────────────────────────────
 
-  refreshRecentEmails() { this._renderRecentEmails(); }
+  refreshRecentEmails() { 
+    this._renderRecentEmails(); 
+    this._renderLineGroupSelector();
+  }
 
   /**
    * Set callback for when a contract is updated (edit mode)
@@ -116,6 +125,7 @@ class AddContractUI {
     }
 
     this._renderRecentEmails();
+    this._syncLineGroupActiveChip();
   }
 
   /**
@@ -510,6 +520,7 @@ class AddContractUI {
     this._customAlertDays.length = 0;
     this._renderCustomAlertTags();
     this._renderRecentEmails();
+    this._syncLineGroupActiveChip();
   }
 
   // ── PRESET INTEGRATION ────────────────────────────────────
@@ -571,6 +582,325 @@ class AddContractUI {
       this._customAlertDays = presetData.alert_days.filter(d => ![30, 14, 7, 1, 0].includes(d));
       this._renderCustomAlertTags();
     }
+    this._syncLineGroupActiveChip();
+  }
+
+  // ── Private: LINE Message Parser ──────────────────────────
+
+  _bindLineMessageParser() {
+    const header = document.getElementById('lineParserHeader');
+    const body = document.getElementById('lineParserBody');
+    const icon = document.getElementById('lineParserToggleIcon');
+    const btnClear = document.getElementById('btnClearLineMessage');
+    const btnParse = document.getElementById('btnParseLineMessage');
+    const textarea = document.getElementById('lineRawMessage');
+
+    header?.addEventListener('click', () => {
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        body.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+      }
+    });
+
+    btnClear?.addEventListener('click', () => {
+      if (textarea) textarea.value = '';
+    });
+
+    btnParse?.addEventListener('click', () => {
+      const text = textarea?.value?.trim();
+      if (!text) {
+        this._toast.error('❌ กรุณาวางข้อความที่ต้องการวิเคราะห์');
+        return;
+      }
+
+      try {
+        const parsed = this._parseLineMessage(text);
+        if (Object.keys(parsed).length === 0) {
+          this._toast.warning('⚠️ ไม่พบข้อมูลที่ตรงกับคำสำคัญการสร้างสัญญาในข้อความ');
+          return;
+        }
+
+        // Fill form fields
+        if (parsed.po_number !== undefined) document.getElementById('poNumber').value = parsed.po_number;
+        if (parsed.project_name !== undefined) document.getElementById('projectName').value = parsed.project_name;
+        if (parsed.customer_name !== undefined) document.getElementById('customerName').value = parsed.customer_name;
+        
+        // Service type mapping
+        if (parsed.service_type) {
+          const typeMap = {
+            'MA': 'MA', 'เอ็มเอ': 'MA',
+            'PM': 'PM', 'พีเอ็ม': 'PM',
+            'MA+PM': 'MA+PM', 'MA/PM': 'MA+PM', 'MA & PM': 'MA+PM', 'PM+MA': 'MA+PM'
+          };
+          const normalized = parsed.service_type.toUpperCase().trim();
+          const mapped = typeMap[normalized];
+          if (mapped) {
+            document.getElementById('serviceType').value = mapped;
+          } else {
+            // Check if select has this option
+            const select = document.getElementById('serviceType');
+            const hasOption = Array.from(select.options).some(opt => opt.value === normalized);
+            if (hasOption) select.value = normalized;
+          }
+        }
+
+        // Start Date
+        if (parsed.start_date) {
+          const sDate = this._parseThaiAndGregorianDate(parsed.start_date);
+          if (sDate) {
+            document.getElementById('startDate').value = sDate.toISOString().slice(0, 10);
+          }
+        }
+
+        // End Date
+        if (parsed.end_date) {
+          const eDate = this._parseThaiAndGregorianDate(parsed.end_date);
+          if (eDate) {
+            document.getElementById('endDate').value = eDate.toISOString().slice(0, 10);
+          }
+        }
+
+        // Email recipients
+        if (parsed.recipients_sale !== undefined) {
+          this._saleEmailTags.clear();
+          parsed.recipients_sale.split(/[,;\s]+/).forEach(email => {
+            if (email.trim() && email.includes('@')) this._saleEmailTags.addEmail(email.trim());
+          });
+        }
+
+        if (parsed.recipients_eng !== undefined) {
+          this._engEmailTags.clear();
+          parsed.recipients_eng.split(/[,;\s]+/).forEach(email => {
+            if (email.trim() && email.includes('@')) this._engEmailTags.addEmail(email.trim());
+          });
+        }
+
+        // Webhooks and note
+        if (parsed.teams_webhook !== undefined) document.getElementById('teamsWebhook').value = parsed.teams_webhook;
+        if (parsed.line_group_id !== undefined) document.getElementById('lineGroupId').value = parsed.line_group_id;
+        if (parsed.note !== undefined) document.getElementById('contractNote').value = parsed.note;
+
+        // Notify Time
+        if (parsed.notify_time) {
+          let time = parsed.notify_time.trim();
+          const match = time.match(/^(\d{1,2})[:.](\d{2})$/);
+          if (match) {
+            const hh = String(parseInt(match[1], 10)).padStart(2, '0');
+            const mm = match[2];
+            document.getElementById('notifyTime').value = `${hh}:${mm}`;
+          } else if (time.match(/^\d{1,2}$/)) {
+            const hh = String(parseInt(time, 10)).padStart(2, '0');
+            document.getElementById('notifyTime').value = `${hh}:00`;
+          }
+        }
+
+        // Alert Days
+        if (parsed.alert_days) {
+          // Uncheck all presets
+          ['alert30', 'alert14', 'alert7', 'alert1', 'alert0'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.checked = false;
+          });
+          this._customAlertDays = [];
+
+          const alertDays = parsed.alert_days.split(/[,;\s]+/)
+            .map(d => parseInt(d.trim(), 10))
+            .filter(d => !isNaN(d));
+
+          const presetDays = [30, 14, 7, 1, 0];
+          alertDays.forEach(val => {
+            if (presetDays.includes(val)) {
+              const el = document.getElementById(`alert${val}`);
+              if (el) el.checked = true;
+            } else {
+              if (!this._customAlertDays.includes(val) && val >= 0 && val <= 365) {
+                this._customAlertDays.push(val);
+              }
+            }
+          });
+          this._customAlertDays.sort((a, b) => b - a);
+          this._renderCustomAlertTags();
+        }
+
+        // Trigger duration preview
+        const startInput = document.getElementById('startDate');
+        if (startInput) startInput.dispatchEvent(new Event('change'));
+        this._renderRecentEmails();
+
+        this._toast.success('✅ วิเคราะห์ข้อมูลและกรอกฟอร์มจากข้อความ LINE สำเร็จ!');
+        
+        // Collapse card
+        body.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+      } catch (err) {
+        console.error('Line parse error:', err);
+        this._toast.error(`❌ เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}`);
+      }
+    });
+  }
+
+  _parseLineMessage(text) {
+    const lines = text.split('\n');
+    const result = {};
+    
+    const regexes = {
+      po_number: /^(?:PO|พีโอ|เลขที่\s*PO)\s*[:：=\-—\s]\s*(.+)$/i,
+      project_name: /^(?:Project|โครงการ|ชื่อโครงการ)\s*[:：=\-—\s]\s*(.+)$/i,
+      customer_name: /^(?:Customer|ลูกค้า|ชื่อลูกค้า)\s*[:：=\-—\s]\s*(.+)$/i,
+      service_type: /^(?:Type|ประเภทบริการ|ประเภท\s*บริการ|ประเภท|บริการ)\s*[:：=\-—\s]\s*(.+)$/i,
+      start_date: /^(?:Start|เริ่ม|วันเริ่มต้น)\s*[:：=\-—\s]\s*(.+)$/i,
+      end_date: /^(?:End|หมดอายุ|วันหมดอายุ)\s*[:：=\-—\s]\s*(.+)$/i,
+      recipients_sale: /^(?:Sale|เซลล์|ผู้รับผิดชอบเซลล์)\s*[:：=\-—\s]\s*(.+)$/i,
+      recipients_eng: /^(?:Eng|วิศวกร|ผู้รับผิดชอบวิศวกร)\s*[:：=\-—\s]\s*(.+)$/i,
+      teams_webhook: /^(?:Teams|ทีมส์|เว็บฮุคทีมส์)\s*[:：=\-—\s]\s*(.+)$/i,
+      note: /^(?:Note|โน้ต|หมายเหตุ)\s*[:：=\-—\s]\s*(.+)$/i,
+      line_group_id: /^(?:Group\s*ID|กลุ่ม|ไลน์กลุ่ม|ไอดีกลุ่ม)\s*[:：=\-—\s]\s*(.+)$/i,
+      alert_days: /^(?:Alert|แจ้งเตือนก่อน|เตือนล่วงหน้า)\s*[:：=\-—\s]\s*(.+)$/i,
+      notify_time: /^(?:Time|เวลาแจ้งเตือน|เวลาส่ง)\s*[:：=\-—\s]\s*(.+)$/i
+    };
+
+    lines.forEach(line => {
+      line = line.trim();
+      if (!line) return;
+      
+      for (const [key, regex] of Object.entries(regexes)) {
+        const match = line.match(regex);
+        if (match) {
+          result[key] = match[1].trim();
+          break; 
+        }
+      }
+    });
+    
+    return result;
+  }
+
+  _parseThaiAndGregorianDate(dateStr) {
+    if (!dateStr) return null;
+    dateStr = dateStr.trim();
+
+    // 1) Match YYYY-MM-DD or YYYY/MM/DD
+    let match = dateStr.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+    if (match) {
+      let year = parseInt(match[1], 10);
+      let month = parseInt(match[2], 10) - 1;
+      let day = parseInt(match[3], 10);
+      if (year >= 2500) year -= 543;
+      const date = new Date(year, month, day);
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    // 2) Match DD-MM-YYYY or DD/MM/YYYY
+    match = dateStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+    if (match) {
+      let day = parseInt(match[1], 10);
+      let month = parseInt(match[2], 10) - 1;
+      let year = parseInt(match[3], 10);
+      if (year >= 2500) year -= 543;
+      const date = new Date(year, month, day);
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    // 3) Match DD-MM-YY or DD/MM/YY (e.g. 31/12/69)
+    match = dateStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2})$/);
+    if (match) {
+      let day = parseInt(match[1], 10);
+      let month = parseInt(match[2], 10) - 1;
+      let shortYear = parseInt(match[3], 10);
+      let year = shortYear >= 50 ? (2500 + shortYear - 543) : (2000 + shortYear);
+      const date = new Date(year, month, day);
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    // Fallback
+    const parsed = Date.parse(dateStr);
+    if (!isNaN(parsed)) {
+      const date = new Date(parsed);
+      if (date.getFullYear() >= 2500) {
+        date.setFullYear(date.getFullYear() - 543);
+      }
+      return date;
+    }
+
+    return null;
+  }
+
+  _renderLineGroupSelector() {
+    const container = document.getElementById('lineGroupSelector');
+    if (!container) return;
+
+    const contracts = this._getContracts() || [];
+    const uniqueGroups = [];
+    const seenIds = new Set();
+
+    contracts.forEach(c => {
+      if (c.line_group_id && !seenIds.has(c.line_group_id)) {
+        seenIds.add(c.line_group_id);
+        uniqueGroups.push({
+          id: c.line_group_id,
+          name: c.line_group_name || c.line_group_id
+        });
+      }
+    });
+
+    if (uniqueGroups.length === 0) {
+      container.innerHTML = '<span style="font-size:0.75rem;color:var(--text-muted)">(ไม่มีประวัติไลน์กลุ่มที่เชื่อมต่อในระบบ)</span>';
+      return;
+    }
+
+    const currentVal = document.getElementById('lineGroupId').value.trim();
+
+    container.innerHTML = `
+      <div class="group-chips">
+        ${uniqueGroups.map(g => {
+          const isActive = g.id === currentVal;
+          return `
+            <button type="button" class="group-chip ${isActive ? 'active' : ''}" data-id="${g.id}" title="Group ID: ${g.id}">
+              💬 ${g.name}
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    // Bind click events
+    container.querySelectorAll('.group-chip').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const selectedId = btn.dataset.id;
+        const input = document.getElementById('lineGroupId');
+        
+        if (btn.classList.contains('active')) {
+          // If clicked active, deselect it
+          input.value = '';
+          btn.classList.remove('active');
+        } else {
+          // Select it
+          input.value = selectedId;
+          container.querySelectorAll('.group-chip').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+        }
+        
+        // Trigger input event to let other things know it changed
+        input.dispatchEvent(new Event('input'));
+      });
+    });
+  }
+
+  _syncLineGroupActiveChip() {
+    const inputVal = document.getElementById('lineGroupId').value.trim();
+    const container = document.getElementById('lineGroupSelector');
+    if (!container) return;
+    
+    container.querySelectorAll('.group-chip').forEach(btn => {
+      if (btn.dataset.id === inputVal) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
   }
 
   _bindActionButtons() {

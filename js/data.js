@@ -16,6 +16,7 @@ const today = new Date();
       note: 'ดูแลกล้อง CCTV 120 ตัว',
       status: 'active',
       line_group_id: 'C1a2b3c4d5e6f7890abcdef123456789',
+      line_group_name: 'กลุ่มแจ้งเตือน MA/PM',
       notify_line: true,
     },
     {
@@ -48,6 +49,7 @@ const today = new Date();
       note: '',
       status: 'active',
       line_group_id: 'C9876543210abcdef1234567890abcdef',
+      line_group_name: 'กลุ่มผู้บริหาร & Sale',
       notify_line: true,
     },
     {
@@ -80,6 +82,7 @@ const today = new Date();
       note: 'ดูแล AP 50 ตัว',
       status: 'active',
       line_group_id: 'Cabcdef1234567890abcdef1234567890',
+      line_group_name: 'กลุ่มวิศวกร Support',
       notify_line: true,
     },
     {
@@ -144,6 +147,7 @@ const today = new Date();
       note: '',
       status: 'active',
       line_group_id: 'Cfedcba0987654321fedcba0987654321',
+      line_group_name: 'กลุ่มลูกค้า VIP',
       notify_line: true,
     },
     {
