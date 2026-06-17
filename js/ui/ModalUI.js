@@ -76,12 +76,12 @@ class ModalUI {
       ${row('📅 หมดอายุ', `<span style="color:var(--red-400);font-weight:700">${formatDate(contract.end_date)}</span>`)}
       ${row('⏳ เหลืออีก', `<span class="days-remaining ${category}" style="font-size:1.1rem">${daysLeft > 0 ? daysLeft + ' วัน' : 'หมดอายุแล้ว'}</span>`)}
       ${row('สถานะ', this._renderStatusBadge(category))}
-      ${row('📧 Email Sale', contract.recipients_sale || '-')}
-      ${row('📧 Email Engineer', contract.recipients_eng || '-')}
-      ${row('💬 Teams Webhook', `<span style="font-size:0.75rem;max-width:300px;word-break:break-all">${contract.teams_webhook || '-'}</span>`)}
       ${row('💚 LINE Group', contract.line_group_id
         ? `<span class="badge badge-line">✅ เชื่อมต่อแล้ว</span> <span style="font-weight:600;margin-left:6px;font-size:0.85rem;" title="ID: ${contract.line_group_id}">${contract.line_group_name || contract.line_group_id}</span>`
         : '<span style="color:var(--text-muted)">— ไม่ได้ตั้งค่า</span>')}
+      ${(contract.recipients_sale && contract.recipients_sale.trim() && contract.recipients_sale !== '-') ? row('📧 Email Sale', contract.recipients_sale) : ''}
+      ${(contract.recipients_eng && contract.recipients_eng.trim() && contract.recipients_eng !== '-') ? row('📧 Email Engineer', contract.recipients_eng) : ''}
+      ${(contract.teams_webhook && contract.teams_webhook.trim() && contract.teams_webhook !== '-') ? row('💬 Teams Webhook', `<span style="font-size:0.75rem;max-width:300px;word-break:break-all">${contract.teams_webhook}</span>`) : ''}
       ${contract.note ? row('📝 หมายเหตุ', contract.note) : ''}
       ${this._buildScheduleSection(contract.contract_id)}
 
