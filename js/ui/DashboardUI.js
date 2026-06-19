@@ -46,10 +46,7 @@ class DashboardUI {
       else if (c.category === 'safe') safe++;
     });
 
-    const expiredCount = allContracts.filter(
-      c => c.status === 'expired' || c.status === 'cancel'
-    ).length;
-    const total = enriched.filter(c => c.status === 'active').length + expiredCount;
+    const total = critical + warning + safe;
 
     animateCounter('criticalCount', critical);
     animateCounter('warningCount', warning);
@@ -59,7 +56,7 @@ class DashboardUI {
 
   _renderTable(enriched) {
     const sorted = enriched
-      .filter(c => c.status === 'active')
+      .filter(c => c.status === 'active' && c.daysLeft > 0)
       .sort((a, b) => a.daysLeft - b.daysLeft)
       .slice(0, 8);
 
